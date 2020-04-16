@@ -1,61 +1,86 @@
 package server;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
+import java.io.Serializable;
 import java.net.Socket;
 
-import client.Login;
+import DB.MemberDTO;
 
 public class ServerChat extends Thread {
-	private Socket withClient = null;// 어떤 클라이언트와 소통할지 모르니까 null
-	private InputStream reMsg = null;
-	private OutputStream sendMsg = null;
-	private String id = null;
-	private String pwd = null;
-
-	public ServerChat(Socket c) {
-		this.withClient = c;
-	}
-
-	public ServerChat(String id, String pwd) {
-		this.id=id;
-		this.pwd=pwd;
-	}
+	private static final long serialVersionUID = 1L;
 
 	@Override
 	public void run() {
-		StreamSet();
+		Receive();
+		Send(check);
 	}
 
-	private void StreamSet() {
+	private Socket withClient = null;// 어떤 클라이언트와 소통할지 모르니까 null
+	private InputStream reMsg = null;
+	private OutputStream sendMsg = null;
+	private ServerCenter sc = null;
+	private String[] check = null;
+
+	public ServerChat(Socket c, ServerCenter sc) {
+		this.sc = sc;
+		this.withClient = c;
+	}
+
+	public ServerChat(String[] check) {
+		this.check = check;
+	}
+
+	private void Receive() {
 		try {
-			reMsg = withClient.getInputStream();// 소켓으로 주고받기한 것을 jvm으로 in하는것
-			byte[] reBuffer = new byte[100];
-			reMsg.read(reBuffer);
-			id = new String(reBuffer);
-			id = id.trim();// 공백제거
-			
-			MemberDTO member = new MemberDTO();
+			System.out.println("서버로 도착~");
+			while (true) {
+				reMsg = withClient.getInputStream();// 소켓으로 주고받기한 것을 jvm으로 in하는것
+				byte[] bytes = new byte[1024];
+				reMsg.read(bytes);
 
-			MemberDAO dao = MemberDAO.getInstance();
-			MemberDTO result = dao.loginchk(id, pwd);
+				ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+				ObjectInputStream ois = new ObjectInputStream(bais);
+				Object objectMember = ois.readObject();
+				if (objectMember != null) {
+					check = (String[]) objectMember;
+					for (int i = 0; i < check.length; i++) {
+						System.out.println(check[i]);
+					}
+					sc.select(check);
 
-			if (result.getId().equals(member.getId())&&result.getPwd().equals(member.getPwd())) {
-				
+				}
+
 			}
+		} catch (Exception e) {
+			System.out.println("server chat Error");
+			e.printStackTrace();
 
-			InetAddress c_ip = withClient.getInetAddress();// 소켓을 통해 아이피를 불러오기
-			String ip = c_ip.getHostAddress();
+		}
 
-			System.out.println(id + " 님이 로그인하셨습니다. (" + ip + ")");
+	}
 
-			String reMsg = "정상 접속되었습니다.";
+	public void Send(Object memberDTO) {
+		try {
+			System.out.println("client-->login");
+			byte[] bytes = new byte[1024];
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(check);
+
+			bytes = baos.toByteArray();
+			System.out.println("여기s: " + bytes.toString());
+
 			sendMsg = withClient.getOutputStream();
-			sendMsg.write(reMsg.getBytes());
-
+			sendMsg.write(bytes);
+			System.out.println("끝");
 		} catch (IOException e) {
+			System.out.println("Server chat Error");
 		}
 
 	}

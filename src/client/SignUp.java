@@ -51,9 +51,7 @@ public class SignUp extends JFrame {
 		createjlabel();
 		createtxtfield();
 		createbtn();
-//		jbchk();
 		Pwdchk();
-//		complete();
 	}
 
 	private void createjlabel() {
@@ -200,25 +198,6 @@ public class SignUp extends JFrame {
 					}
 				}
 
-//				if (tfpwd.getText().length() >= 8) {
-//					String[] specialtxt = { "!", "@", "#", "$", "%", "^", "&", "*" };
-//					for (int i = 0; i < specialtxt.length;i++) {
-//						if (tfpwd.getText().indexOf(specialtxt[i])!=-1) {
-//							chkpwd.setText("사용가능");
-//							break;
-//						} else {
-//							chkpwd.setText("특수문자 미포함");
-//						}
-//					}
-//				}
-//
-//				else {
-//					chkpwd.setText("8글자 미만");
-//
-//				}
-//				if (tfpwd.getText().isEmpty()) {
-//					chkpwd.setText("");
-//				}
 
 			}
 

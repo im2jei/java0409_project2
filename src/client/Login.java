@@ -3,6 +3,11 @@ package client;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -13,22 +18,28 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import server.MemberDAO;
-import server.MemberDTO;
-import server.ServerChat;
+import DB.MemberDTO;
 
 public class Login extends JFrame implements ActionListener {
 	JPanel nP, cP, sP, eP;
 	JLabel idLabel, pwLabel, joinlabel;
 	JTextField idField, pwdField, loginField;
 	JButton loginBtn, joinBtn;
+	private static final String USERINFO_SER = "user.ser";
+	ClientChat ch = null;
+	String[] check = null;
 
-	public Login() {
+	public Login(ClientChat ch) {
 		super("Login");
+		this.ch = ch;
 		createpanel();
-		loginchk();
+		loginchk(check);
 		setClose();
 		gosignup();
+	}
+
+	public Login() {
+		// TODO Auto-generated constructor stub
 	}
 
 	private void createpanel() {
@@ -82,21 +93,38 @@ public class Login extends JFrame implements ActionListener {
 		this.setVisible(true);
 	}
 
-	private void loginchk() {
+	public void loginchk(String[] check) {
+
 		loginBtn.addActionListener(new ActionListener() {
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
 				try {
-					ClientChat scht = new ClientChat(idField.getText(),pwdField.getText());
-					if () {
-						JOptionPane.showMessageDialog(null, "로그인 완료");
-					} else {
-						JOptionPane.showMessageDialog(null, "존재하지 않는 아이디거나 비밀번호가 맞지 않습니다.");
-						setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-						idField.setText("");
-						pwdField.setText("");
+					String[] check = { idField.getText(), pwdField.getText(), "login" };
+					ch.Send(check);
+					System.out.println("로그인-->clientchat");
+
+					for (int i = 0; i < check.length; i++) {
+						if (idField.getText().equals(check[0]) && pwdField.getText().equals(check[1])) {
+							JOptionPane.showMessageDialog(null, "로그인 완료");
+							dispose();
+							if (check[check.length-1].equals("1")) {
+								System.out.println("쇼핑몰창 뜨게하기");
+								dispose();
+							} else if (check[check.length-1].equals("5")) {
+								System.out.println("관리자창 뜨게 하기 관리자 객체를 관리자의 창으로 보내깅");
+								dispose();
+							}
+						}
+
 					}
+
+//					else {
+//						JOptionPane.showMessageDialog(null, "존재하지 않는 아이디거나 비밀번호가 맞지 않습니다.");
+//						setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+//						idField.setText("");
+//						pwdField.setText("");
+//					}
 
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block

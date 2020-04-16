@@ -1,53 +1,92 @@
 package client;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.Socket;
-import java.util.Scanner;
 
-public class ClientChat {
+import server.ServerChat;
+
+public class ClientChat implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	private Socket withServer = null;
 	private InputStream reMsg = null;
 	private OutputStream sendMsg = null;
-	private String id = null;
-	private String pwd = null;
-	private Scanner input = new Scanner(System.in);
+	String[] check = null;
+	ServerChat sv = null;
+	Login log= null;
 
-	ClientChat(Socket c) {
+	public ClientChat() {
+	}
+
+	public ClientChat(String[] check) {
+		this.check = check;
+	}
+
+	private void start() {
+		new Login(this);
+
+	}
+
+	ClientChat(Socket c) throws IOException {
 		this.withServer = c;
-		streamSet();
+		start();
+		Send(check);
 		receive();
-		// send();
 	}
 
-	public ClientChat(String id, String pwd) {
-		this.id = id;
-		this.pwd = pwd;
+	private void receive() throws IOException {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					System.out.println("received");
+					while (true) {
+						reMsg = withServer.getInputStream();// 소켓으로 주고받기한 것을 jvm으로 in하는것
+						byte[] bytes = new byte[1024];
+						reMsg.read(bytes);
+
+						ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+						ObjectInputStream ois = new ObjectInputStream(bais);
+						Object objectMember = ois.readObject();
+						if (objectMember != null) {
+							check = (String[]) objectMember;
+							log= new Login();
+							log.loginchk(check);
+						}
+					}
+
+				} catch (IOException e) {
+				} catch (ClassNotFoundException e) {
+				}
+			}
+		}).start();
 	}
 
-	private void receive() {
-
-	}
-
-	private void streamSet() {
+	public void Send(String[] check) {
 
 		try {
-			new Login();
+			System.out.println("client-->login");
+			byte[] bytes = new byte[1024];
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(check);
 
-			sendMsg = withServer.getOutputStream();// 소켓을 통해 외부로 나가는 자원
-			sendMsg.write(id.getBytes());
-			sendMsg.write(pwd.getBytes());
+			bytes = baos.toByteArray();
+			System.out.println("여기c: " + bytes.toString());
 
-			reMsg = withServer.getInputStream();// 소켓으로 주고받기한 것을 jvm으로 in하는것
-			byte[] reBuffer = new byte[100];
-			reMsg.read(reBuffer);
-			String msg = new String(reBuffer);
-			msg = msg.trim();// 공백제거
-			System.out.println(msg);// 받아온 메세지 출력
-
+			sendMsg = withServer.getOutputStream();
+			sendMsg.write(bytes);
+			System.out.println("끝");
 		} catch (IOException e) {
-			System.out.println("End");
+			System.out.println("Client chat Error");
 		}
 
 	}
